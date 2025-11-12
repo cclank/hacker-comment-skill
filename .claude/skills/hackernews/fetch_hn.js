@@ -136,26 +136,27 @@ function formatComment(comment, includeReplies = true) {
 }
 
 /**
- * Format the entire post with comments
+ * Format the entire post with comments (Chinese output)
  */
 function formatPost(post, comments) {
-  let output = '# Hacker News Post\n\n';
+  let output = '# Hacker News 帖子\n\n';
   output += `## ${post.title}\n\n`;
-  output += `**Author:** ${post.by || 'unknown'}\n`;
-  output += `**Score:** ${post.score || 0} points\n`;
-  output += `**Time:** ${new Date(post.time * 1000).toISOString()}\n`;
-  output += `**URL:** https://news.ycombinator.com/item?id=${post.id}\n\n`;
+  output += `👤 **作者：** ${post.by || 'unknown'}\n`;
+  output += `📊 **评分：** ${post.score || 0} 分\n`;
+  output += `📅 **时间：** ${new Date(post.time * 1000).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\n`;
+  output += `💭 **HN 讨论：** https://news.ycombinator.com/item?id=${post.id}\n`;
 
   if (post.url) {
-    output += `**Link:** ${post.url}\n\n`;
+    output += `🔗 **原文链接：** ${post.url}\n`;
   }
+  output += '\n';
 
   if (post.text) {
-    output += `## Post Content\n\n`;
+    output += `## 📝 帖子内容\n\n`;
     output += decodeHTML(post.text) + '\n\n';
   }
 
-  output += `## Comments (${post.descendants || 0} total)\n\n`;
+  output += `## 💬 评论 (共 ${post.descendants || 0} 条)\n\n`;
 
   for (const comment of comments) {
     output += formatComment(comment);
@@ -177,7 +178,7 @@ async function fetchStoryIds(type) {
 }
 
 /**
- * Format a story item for list view
+ * Format a story item for list view (Chinese output)
  */
 function formatStoryItem(story, index) {
   const date = new Date(story.time * 1000).toISOString().split('T')[0];
@@ -192,41 +193,56 @@ function formatStoryItem(story, index) {
   }
 
   let output = `\n### ${index}. ${story.title}\n\n`;
-  output += `**Score:** ${story.score || 0} points | `;
-  output += `**Comments:** ${story.descendants || 0} | `;
-  output += `**Author:** ${story.by || 'unknown'} | `;
-  output += `**Date:** ${date}\n\n`;
+
+  // Main info in Chinese
+  output += `📊 **评分：** ${story.score || 0} 分 | `;
+  output += `💬 **评论数：** ${story.descendants || 0} | `;
+  output += `👤 **作者：** ${story.by || 'unknown'}\n`;
+  output += `📅 **日期：** ${date}\n\n`;
 
   if (story.categories && story.categories.length > 0) {
-    output += `**Categories:** ${story.categories.join(', ')}\n`;
+    output += `🏷️ **分类：** ${story.categories.join(', ')}\n\n`;
   }
 
+  // Links section
   if (story.url) {
-    output += `**Link:** ${story.url}\n`;
-    output += `**Domain:** ${domain}\n`;
+    output += `🔗 **原文链接：** ${story.url}\n`;
+    output += `🌐 **来源：** ${domain}\n`;
   }
 
-  output += `**HN URL:** https://news.ycombinator.com/item?id=${story.id}\n`;
+  output += `💭 **HN 讨论：** https://news.ycombinator.com/item?id=${story.id}\n`;
 
   if (story.text) {
     const text = decodeHTML(story.text);
     const preview = text.length > 200 ? text.substring(0, 200) + '...' : text;
-    output += `\n**Preview:** ${preview}\n`;
+    output += `\n📝 **内容预览：** ${preview}\n`;
   }
 
   return output;
 }
 
 /**
- * Format multiple stories
+ * Format multiple stories (Chinese output)
  */
 function formatStoryList(stories, type, filters) {
-  let output = `# Hacker News - ${type.charAt(0).toUpperCase() + type.slice(1)} Stories\n\n`;
-  output += `**Total Stories:** ${stories.length}\n`;
-  output += `**Fetched at:** ${new Date().toISOString()}\n`;
+  // Type name mapping to Chinese
+  const typeNames = {
+    'top': '热门',
+    'new': '最新',
+    'best': '最佳',
+    'ask': 'Ask HN',
+    'show': 'Show HN',
+    'job': '招聘'
+  };
+
+  const typeName = typeNames[type] || type.charAt(0).toUpperCase() + type.slice(1);
+
+  let output = `# Hacker News - ${typeName}故事\n\n`;
+  output += `📊 **故事总数：** ${stories.length}\n`;
+  output += `⏰ **获取时间：** ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\n`;
 
   if (filters && filters.length > 0) {
-    output += `**Filters:** ${filters.join(', ')}\n`;
+    output += `🔍 **关键词过滤：** ${filters.join(', ')}\n`;
   }
 
   output += '\n---\n';
