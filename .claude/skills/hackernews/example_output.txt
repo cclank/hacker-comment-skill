@@ -1,0 +1,92 @@
+# Hacker News Post
+
+## Example: Building a CLI Tool with Claude
+
+**Author:** johndoe
+**Score:** 234 points
+**Time:** 2024-01-15T10:30:00.000Z
+**URL:** https://news.ycombinator.com/item?id=38471822
+
+**Link:** https://example.com/building-cli-tools
+
+## Post Content
+
+I've been working on a CLI tool that helps developers analyze code using AI. The tool integrates with Claude API and provides intelligent code reviews.
+
+Key features:
+- Automated code analysis
+- Security vulnerability detection
+- Performance optimization suggestions
+- Best practices recommendations
+
+Would love to hear your feedback!
+
+## Comments (15 total)
+
+[Comment by alice at 2024-01-15T10:45:00.000Z]
+This looks really interesting! I've been looking for something like this. A few questions:
+
+1. Does it support multiple languages?
+2. How does it handle false positives?
+3. What's the pricing model?
+
+  [Comment by johndoe at 2024-01-15T11:00:00.000Z]
+  Great questions!
+
+  1. Yes, currently supports Python, JavaScript, TypeScript, Go, and Rust
+  2. We use a confidence scoring system and allow users to customize rules
+  3. Free for open source, $10/month for individual developers
+
+    [Comment by alice at 2024-01-15T11:15:00.000Z]
+    Thanks for the detailed response! I'll definitely give it a try.
+
+---
+
+[Comment by bob at 2024-01-15T10:50:00.000Z]
+How does this compare to existing tools like SonarQube or CodeClimate?
+
+  [Comment by johndoe at 2024-01-15T11:05:00.000Z]
+  Good question. The main difference is that we use AI to understand context better. Traditional static analysis tools rely on predefined rules, while our tool can understand the intent and suggest more contextual improvements.
+
+  That said, we're not trying to replace tools like SonarQube - we see this as complementary.
+
+---
+
+[Comment by charlie at 2024-01-15T11:00:00.000Z]
+I've used Claude API before and found it quite expensive for large codebases. How do you handle cost optimization?
+
+  [Comment by johndoe at 2024-01-15T11:20:00.000Z]
+  We implement several strategies:
+
+  1. Caching of similar code patterns
+  2. Incremental analysis (only changed files)
+  3. Smart chunking to minimize token usage
+  4. Batch processing for non-urgent reviews
+
+  We've managed to reduce costs by about 70% compared to naive implementations.
+
+---
+
+[Comment by dave at 2024-01-15T11:30:00.000Z]
+This is exactly what I need! One concern though - what about data privacy? Do you send the code to external servers?
+
+---
+
+[Comment by eve at 2024-01-15T11:45:00.000Z]
+Great work! I'd suggest adding integration with popular CI/CD platforms like GitHub Actions, GitLab CI, etc.
+
+  [Comment by johndoe at 2024-01-15T12:00:00.000Z]
+  Already in the works! GitHub Actions integration will be available next week, followed by GitLab CI and Jenkins.
+
+---
+
+[Comment by frank at 2024-01-15T12:15:00.000Z]
+How accurate is the security vulnerability detection compared to tools like Snyk or Dependabot?
+
+---
+
+[Comment by grace at 2024-01-15T12:30:00.000Z]
+Love the idea! Any plans to open source it?
+
+---
+

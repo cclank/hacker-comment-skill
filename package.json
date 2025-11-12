@@ -1,0 +1,30 @@
+{
+  "name": "hacker-comment-skill",
+  "version": "1.0.0",
+  "description": "A Claude Code skill for analyzing Hacker News posts and comments",
+  "main": ".claude/skills/hackernews/fetch_hn.js",
+  "scripts": {
+    "test": "node .claude/skills/hackernews/fetch_hn.js --help"
+  },
+  "keywords": [
+    "claude-code",
+    "skill",
+    "hacker-news",
+    "hn",
+    "analyzer",
+    "comments",
+    "scraper"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/hacker-comment-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/hacker-comment-skill/issues"
+  }
+}
