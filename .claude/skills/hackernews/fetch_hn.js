@@ -2,7 +2,10 @@
 
 /**
  * Hacker News Content Fetcher
- * Fetches a HN post and all its comments recursively
+ * Fetches HN posts with various modes:
+ * - Single post with all comments
+ * - Top/New/Best/Ask/Show/Job stories lists
+ * - Content filtering by keywords
  */
 
 const https = require('https');
@@ -10,6 +13,16 @@ const fs = require('fs');
 const path = require('path');
 
 const HN_API_BASE = 'https://hacker-news.firebaseio.com/v0';
+
+// Story type endpoints
+const STORY_TYPES = {
+  top: 'topstories',
+  new: 'newstories',
+  best: 'beststories',
+  ask: 'askstories',
+  show: 'showstories',
+  job: 'jobstories'
+};
 
 /**
  * Fetch JSON from HN API
@@ -153,33 +166,370 @@ function formatPost(post, comments) {
 }
 
 /**
+ * Fetch story IDs by type
+ */
+async function fetchStoryIds(type) {
+  const endpoint = STORY_TYPES[type];
+  if (!endpoint) {
+    throw new Error(`Invalid story type: ${type}`);
+  }
+  return fetchJSON(`${HN_API_BASE}/${endpoint}.json`);
+}
+
+/**
+ * Format a story item for list view
+ */
+function formatStoryItem(story, index) {
+  const date = new Date(story.time * 1000).toISOString().split('T')[0];
+  let domain = 'news.ycombinator.com';
+
+  if (story.url) {
+    try {
+      domain = new URL(story.url).hostname.replace('www.', '');
+    } catch (e) {
+      domain = 'unknown';
+    }
+  }
+
+  let output = `\n### ${index}. ${story.title}\n\n`;
+  output += `**Score:** ${story.score || 0} points | `;
+  output += `**Comments:** ${story.descendants || 0} | `;
+  output += `**Author:** ${story.by || 'unknown'} | `;
+  output += `**Date:** ${date}\n\n`;
+
+  if (story.categories && story.categories.length > 0) {
+    output += `**Categories:** ${story.categories.join(', ')}\n`;
+  }
+
+  if (story.url) {
+    output += `**Link:** ${story.url}\n`;
+    output += `**Domain:** ${domain}\n`;
+  }
+
+  output += `**HN URL:** https://news.ycombinator.com/item?id=${story.id}\n`;
+
+  if (story.text) {
+    const text = decodeHTML(story.text);
+    const preview = text.length > 200 ? text.substring(0, 200) + '...' : text;
+    output += `\n**Preview:** ${preview}\n`;
+  }
+
+  return output;
+}
+
+/**
+ * Format multiple stories
+ */
+function formatStoryList(stories, type, filters) {
+  let output = `# Hacker News - ${type.charAt(0).toUpperCase() + type.slice(1)} Stories\n\n`;
+  output += `**Total Stories:** ${stories.length}\n`;
+  output += `**Fetched at:** ${new Date().toISOString()}\n`;
+
+  if (filters && filters.length > 0) {
+    output += `**Filters:** ${filters.join(', ')}\n`;
+  }
+
+  output += '\n---\n';
+
+  stories.forEach((story, index) => {
+    output += formatStoryItem(story, index + 1);
+    output += '\n---\n';
+  });
+
+  return output;
+}
+
+/**
+ * Filter stories by keywords
+ */
+function filterStories(stories, keywords) {
+  if (!keywords || keywords.length === 0) {
+    return stories;
+  }
+
+  const lowerKeywords = keywords.map(k => k.toLowerCase());
+
+  return stories.filter(story => {
+    const searchText = [
+      story.title || '',
+      story.text || '',
+      story.url || '',
+      story.by || ''
+    ].join(' ').toLowerCase();
+
+    return lowerKeywords.some(keyword => searchText.includes(keyword));
+  });
+}
+
+/**
+ * Categorize story by domain/content
+ */
+function categorizeStory(story) {
+  const title = (story.title || '').toLowerCase();
+  const text = (story.text || '').toLowerCase();
+  const url = story.url || '';
+
+  const categories = [];
+
+  // Tech categories
+  if (/(ai|artificial intelligence|machine learning|ml|gpt|llm|neural|deep learning)/i.test(title + text)) {
+    categories.push('AI/ML');
+  }
+  if (/(python|javascript|rust|go|java|typescript|c\+\+|ruby)/i.test(title + text)) {
+    categories.push('Programming');
+  }
+  if (/(web|frontend|backend|api|react|vue|angular)/i.test(title + text)) {
+    categories.push('Web Dev');
+  }
+  if (/(database|sql|postgres|mongodb|redis)/i.test(title + text)) {
+    categories.push('Database');
+  }
+  if (/(security|vulnerability|breach|exploit|crypto)/i.test(title + text)) {
+    categories.push('Security');
+  }
+  if (/(startup|founder|vc|funding|acquisition)/i.test(title + text)) {
+    categories.push('Startup');
+  }
+  if (/(devops|docker|kubernetes|k8s|aws|cloud)/i.test(title + text)) {
+    categories.push('DevOps/Cloud');
+  }
+
+  // Content type
+  if (title.startsWith('ask hn')) categories.push('Ask HN');
+  if (title.startsWith('show hn')) categories.push('Show HN');
+  if (title.includes('hiring') || title.includes('job')) categories.push('Jobs');
+
+  return categories.length > 0 ? categories : ['General'];
+}
+
+/**
+ * Parse command line arguments
+ */
+function parseArgs(args) {
+  const config = {
+    mode: 'single',  // single, list
+    storyType: null,
+    hnId: null,
+    limit: 10,
+    filters: [],
+    categories: [],
+    outputFile: null
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === '--top' || arg === '--new' || arg === '--best' ||
+        arg === '--ask' || arg === '--show' || arg === '--job') {
+      config.mode = 'list';
+      config.storyType = arg.substring(2);  // Remove --
+
+      // Check if next arg is a number (limit)
+      if (args[i + 1] && !args[i + 1].startsWith('--') && !isNaN(args[i + 1])) {
+        config.limit = parseInt(args[i + 1]);
+        i++;
+      }
+    } else if (arg === '--filter' || arg === '-f') {
+      // Collect all filter keywords
+      i++;
+      while (i < args.length && !args[i].startsWith('--')) {
+        config.filters.push(args[i]);
+        i++;
+      }
+      i--;
+    } else if (arg === '--category' || arg === '-c') {
+      // Filter by category
+      i++;
+      while (i < args.length && !args[i].startsWith('--')) {
+        config.categories.push(args[i].toLowerCase());
+        i++;
+      }
+      i--;
+    } else if (arg === '--output' || arg === '-o') {
+      config.outputFile = args[i + 1];
+      i++;
+    } else if (!arg.startsWith('--') && !config.hnId) {
+      // First non-flag argument is the HN ID
+      config.hnId = arg;
+    }
+  }
+
+  return config;
+}
+
+/**
+ * Print usage information
+ */
+function printUsage() {
+  console.error(`
+Hacker News Content Fetcher
+
+Usage:
+  # Fetch a single post with all comments
+  node fetch_hn.js <HN_ID> [--output file]
+
+  # Fetch top/new/best stories
+  node fetch_hn.js --top [limit] [--filter keyword...] [--category cat...]
+  node fetch_hn.js --new [limit] [--filter keyword...] [--category cat...]
+  node fetch_hn.js --best [limit] [--filter keyword...] [--category cat...]
+  node fetch_hn.js --ask [limit] [--filter keyword...]
+  node fetch_hn.js --show [limit] [--filter keyword...]
+  node fetch_hn.js --job [limit] [--filter keyword...]
+
+Options:
+  --top, --new, --best, --ask, --show, --job
+                        Fetch stories by type
+  [limit]              Number of stories to fetch (default: 10)
+  --filter, -f         Filter by keywords (space-separated)
+  --category, -c       Filter by categories: ai/ml, programming, web, database,
+                       security, startup, devops, general
+  --output, -o         Output file path
+
+Examples:
+  # Get single post
+  node fetch_hn.js 38471822
+
+  # Get top 10 stories
+  node fetch_hn.js --top 10
+
+  # Get top 20 AI-related stories
+  node fetch_hn.js --top 20 --filter ai machine learning gpt
+
+  # Get Show HN posts about rust
+  node fetch_hn.js --show 15 --filter rust
+
+  # Get stories in AI/ML category
+  node fetch_hn.js --top 20 --category ai/ml
+`);
+}
+
+/**
+ * Fetch and process single post
+ */
+async function fetchSinglePost(hnId, outputFile) {
+  console.error(`Fetching HN post ${hnId}...`);
+  const post = await fetchItem(hnId);
+
+  if (!post) {
+    console.error(`Post ${hnId} not found`);
+    process.exit(1);
+  }
+
+  console.error(`Fetching comments (${post.descendants || 0} total)...`);
+  const comments = await fetchComments(post.kids || []);
+
+  console.error('Formatting output...');
+  const output = formatPost(post, comments);
+
+  return output;
+}
+
+/**
+ * Fetch and process story list
+ */
+async function fetchStoryList(config) {
+  console.error(`Fetching ${config.storyType} stories...`);
+
+  // Fetch story IDs
+  const storyIds = await fetchStoryIds(config.storyType);
+  console.error(`Found ${storyIds.length} story IDs`);
+
+  // Fetch story details (limited by config.limit but fetch more for filtering)
+  const fetchLimit = Math.min(config.filters.length > 0 || config.categories.length > 0 ? config.limit * 3 : config.limit, storyIds.length);
+  console.error(`Fetching details for ${fetchLimit} stories...`);
+
+  const stories = [];
+  for (let i = 0; i < fetchLimit; i++) {
+    try {
+      const story = await fetchItem(storyIds[i]);
+      if (story && !story.deleted && !story.dead) {
+        stories.push(story);
+      }
+
+      // Progress indicator
+      if ((i + 1) % 10 === 0) {
+        console.error(`  Fetched ${i + 1}/${fetchLimit} stories...`);
+      }
+    } catch (e) {
+      console.error(`Error fetching story ${storyIds[i]}:`, e.message);
+    }
+  }
+
+  console.error(`Successfully fetched ${stories.length} stories`);
+
+  // Apply filters
+  let filteredStories = stories;
+
+  if (config.filters.length > 0) {
+    console.error(`Applying keyword filters: ${config.filters.join(', ')}`);
+    filteredStories = filterStories(filteredStories, config.filters);
+    console.error(`After filtering: ${filteredStories.length} stories`);
+  }
+
+  if (config.categories.length > 0) {
+    console.error(`Applying category filters: ${config.categories.join(', ')}`);
+    filteredStories = filteredStories.filter(story => {
+      const storyCategories = categorizeStory(story).map(c => c.toLowerCase());
+      return config.categories.some(cat =>
+        storyCategories.some(sc => sc.includes(cat) || cat.includes(sc))
+      );
+    });
+    console.error(`After category filtering: ${filteredStories.length} stories`);
+  }
+
+  // Limit final results
+  filteredStories = filteredStories.slice(0, config.limit);
+
+  // Add categories to each story for display
+  filteredStories.forEach(story => {
+    story.categories = categorizeStory(story);
+  });
+
+  console.error('Formatting output...');
+  const output = formatStoryList(filteredStories, config.storyType, config.filters);
+
+  return output;
+}
+
+/**
  * Main function
  */
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.length === 0) {
-    console.error('Usage: node fetch_hn.js <HN_ID> [output_file]');
-    process.exit(1);
+  if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+    printUsage();
+    process.exit(args.length === 0 ? 1 : 0);
   }
 
-  const hnId = args[0];
-  const outputFile = args[1] || `/tmp/hn_${hnId}.txt`;
+  const config = parseArgs(args);
 
   try {
-    console.error(`Fetching HN post ${hnId}...`);
-    const post = await fetchItem(hnId);
+    let output;
+    let outputFile;
 
-    if (!post) {
-      console.error(`Post ${hnId} not found`);
+    if (config.mode === 'single') {
+      // Single post mode
+      if (!config.hnId) {
+        console.error('Error: HN_ID is required for single post mode');
+        printUsage();
+        process.exit(1);
+      }
+
+      outputFile = config.outputFile || `/tmp/hn_${config.hnId}.txt`;
+      output = await fetchSinglePost(config.hnId, outputFile);
+
+    } else if (config.mode === 'list') {
+      // List mode
+      const safeName = `${config.storyType}_${config.limit}`;
+      outputFile = config.outputFile || `/tmp/hn_${safeName}.txt`;
+      output = await fetchStoryList(config);
+
+    } else {
+      console.error('Error: Invalid mode');
+      printUsage();
       process.exit(1);
     }
-
-    console.error(`Fetching comments (${post.descendants || 0} total)...`);
-    const comments = await fetchComments(post.kids || []);
-
-    console.error('Formatting output...');
-    const output = formatPost(post, comments);
 
     // Write to file
     fs.writeFileSync(outputFile, output, 'utf-8');
@@ -190,6 +540,7 @@ async function main() {
 
   } catch (error) {
     console.error('Error:', error.message);
+    console.error(error.stack);
     process.exit(1);
   }
 }
