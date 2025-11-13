@@ -3,421 +3,261 @@ description: Fetches and analyzes Hacker News posts (single or lists) with filte
 location: user
 ---
 
-You are a Hacker News content analyzer. Your FIRST and ONLY ACTION is to execute the provided script.
+# 🎯 任务目标
 
-## ⚡ EXECUTE THIS COMMAND IMMEDIATELY - DO NOT DO ANYTHING ELSE FIRST
+用户期望获取 **中文格式化的** Hacker News 内容，包含完整的链接、统计信息和分析。
 
-Based on the user's request, execute ONE of these commands using the Bash tool RIGHT NOW:
+## ⚡ 必须使用专用脚本的原因
 
-### For "top 10" / "热门" / "top stories" / "帮我看看 HN top 10":
-```bash
-node .claude/skills/hackernews/fetch_hn.js --top 10 --direct
-```
+用户已经准备了专门的脚本（`fetch_hn.js` 和 `fetch_hn_algolia.js`），这些脚本提供：
 
-### For single post (e.g., "analyze post 45903404"):
-```bash
-node .claude/skills/hackernews/fetch_hn.js <HN_ID> --direct
-```
+1. ✅ **中文输出** - 所有内容使用中文标签（评分、评论数、作者等）
+2. ✅ **完整链接** - 同时提供原文链接和 HN 讨论链接
+3. ✅ **格式化输出** - 使用 emoji 图标和 markdown 格式
+4. ✅ **实时数据** - 使用 `--direct` 模式直接输出，无缓存
+5. ✅ **商业洞察** - Algolia API 集成，提供趋势分析
 
-### For AI trends / "AI 趋势":
-```bash
-node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --direct
-```
+**关键：** 直接调用 HN API（如使用 curl、fetch）无法提供这些功能，会导致：
+- ❌ 英文输出（不符合用户需求）
+- ❌ 缺少格式化和统计信息
+- ❌ 需要手动处理数据
 
-### For startup opportunities / "创业机会":
-```bash
-node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --direct
-```
-
-### For daily digest / "今日科技" / "每日摘要":
-```bash
-node .claude/skills/hackernews/fetch_hn_algolia.js --daily --direct
-```
-
-## ⛔ ABSOLUTE PROHIBITIONS - NEVER DO THESE
-
-**DO NOT use ANY of these methods:**
-- ❌ Playwright MCP or any MCP tools
-- ❌ curl or wget
-- ❌ fetch or WebFetch tools
-- ❌ Navigate to news.ycombinator.com
-- ❌ Query API documentation
-- ❌ Search for information about HN API
-- ❌ Any method other than executing the script above
-
-**ONLY ALLOWED ACTION:**
-- ✅ Execute: `node .claude/skills/hackernews/fetch_hn.js --top 10 --direct`
-
-The script provides ALL data you need. DO NOT fetch data from anywhere else.
-
-## Supported Modes
-
-### Mode 1: Single Post Analysis
-Fetch a specific HN post with all its comments and analyze it.
-
-### Mode 2: Story Lists (Top/New/Best/Ask/Show/Job)
-Fetch and analyze multiple stories with optional filtering by:
-- **Keywords**: Filter stories containing specific terms
-- **Categories**: AI/ML, Programming, Web Dev, Database, Security, Startup, DevOps/Cloud
-- **Limit**: Number of stories to fetch (default: 10)
-
-### Mode 3: Business Insights (NEW! 商业洞察模式)
-Use Algolia API for advanced search and business intelligence:
-- **AI Trends**: Discover latest AI innovations and applications (AI趋势发现)
-- **Startup Ideas**: Find business opportunities and market gaps (创业机会)
-- **Funding News**: Track investments and acquisitions (融资动态)
-- **Market Gaps**: Discover unmet needs and pain points (市场空白)
-- **Show HN Projects**: Latest community projects (新项目)
-- **Daily Summary**: Get a comprehensive daily tech digest (每日摘要)
-
-## User Input Patterns
-
-Detect and parse these patterns from user messages:
-
-### Pattern 1: Single Post
-- `hackernews <HN_ID> [custom prompt]`
-- Example: "hackernews 38471822 总结技术要点"
-- Example: "analyze HN post 12345678"
-
-### Pattern 2: Top Stories
-- `hackernews top [limit] [filters...]`
-- Example: "hackernews top 10"
-- Example: "show me top 20 HN stories about AI"
-- Example: "get top stories filtered by rust programming"
-
-### Pattern 3: Other Story Types
-- `hackernews new [limit] [filters...]` - Latest stories
-- `hackernews best [limit] [filters...]` - Best stories
-- `hackernews ask [limit] [filters...]` - Ask HN posts
-- `hackernews show [limit] [filters...]` - Show HN posts
-- `hackernews job [limit] [filters...]` - Job postings
-
-### Pattern 4: Filtered Stories
-- Keywords: "top 10 stories about AI machine learning"
-- Categories: "top 20 stories in security category"
-- Combined: "show HN posts about rust, limit 15"
-
-### Pattern 5: Business Insights (商业洞察模式)
-Detect these patterns for using Algolia API:
-- **Intent keywords**: "商机", "机会", "洞察", "趋势", "发现", "市场", "创业", "business opportunity", "market gap", "trend", "insight"
-- **AI Discovery**: "AI 趋势", "AI 领域", "AI innovations", "latest AI"
-- **Startup**: "创业机会", "startup ideas", "business ideas", "side project ideas"
-- **Funding**: "融资", "投资", "funding", "acquisition", "raised money"
-- **Market Research**: "市场空白", "需求", "痛点", "market gap", "user needs", "pain points"
-- **Daily Digest**: "每日摘要", "今日科技", "daily summary", "today's tech news"
-- **Custom Search**: "搜索 HN" + keywords, "search Hacker News for..."
-
-Examples:
-- "发现最近的 AI 趋势" → ai-trends preset
-- "有什么创业机会" → startup-ideas preset
-- "市场上有什么空白" → market-gaps preset
-- "今天有什么值得关注的科技新闻" → daily summary
-- "搜索 HN 上关于 SaaS 的讨论" → custom search
-
-## Instructions
-
-### Step 1: Parse User Request
-
-Analyze the user's message to determine:
-1. **Mode**: single post OR story list OR business insights (Algolia)
-2. **Story Type**: top/new/best/ask/show/job (if list mode)
-3. **HN_ID**: Post ID (if single mode)
-4. **Limit**: Number of stories (if list mode, default 10)
-5. **Filters**: Keywords to filter by
-6. **Categories**: Categories to filter by
-7. **Custom Prompt**: Analysis instructions
-8. **Business Intent**: Check if user wants insights, trends, opportunities, market gaps, etc.
-
-**For Business Insights Mode**, detect these intents:
-- Keywords like: 商机, 机会, 洞察, 趋势, 市场空白, 创业, 融资, etc.
-- Map to presets: ai-trends, startup-ideas, funding, market-gaps, monetization, etc.
-- If specific search needed: use custom Algolia search
-
-**Category Keywords Mapping:**
-- AI/ML: ai, artificial intelligence, machine learning, gpt, llm, neural, deep learning
-- Programming: python, javascript, rust, go, java, typescript, c++, ruby, programming
-- Web Dev: web, frontend, backend, api, react, vue, angular
-- Database: database, sql, postgres, mongodb, redis
-- Security: security, vulnerability, breach, exploit, crypto
-- Startup: startup, founder, vc, funding, acquisition
-- DevOps/Cloud: devops, docker, kubernetes, k8s, aws, cloud
-
-### Step 2: Construct Command
-
-Based on parsed parameters, construct the appropriate command:
-
-**IMPORTANT: You MUST use the provided scripts. Do NOT use curl or other methods to access HN API directly.**
-
-**For Single Post:**
-```bash
-# ALWAYS use this script for single posts
-node .claude/skills/hackernews/fetch_hn.js <HN_ID> --direct
-```
-
-**For Story Lists:**
-```bash
-# ALWAYS use this script for story lists
-node .claude/skills/hackernews/fetch_hn.js --<type> <limit> --direct
-```
-
-**For Business Insights:**
-```bash
-# ALWAYS use this script for business insights
-node .claude/skills/hackernews/fetch_hn_algolia.js <preset> --direct
-```
-
-### Step 3: Execute Command - MANDATORY
-
-**YOU MUST execute the command from Step 2 using the Bash tool. Do NOT:**
-- ❌ Query API documentation
-- ❌ Use curl to call HN API directly
-- ❌ Use any other method
-- ✅ ONLY use the provided scripts with the Bash tool
-
-Example execution:
-```bash
-# For top 10 stories
-node .claude/skills/hackernews/fetch_hn.js --top 10 --direct
-
-# For single post
-node .claude/skills/hackernews/fetch_hn.js 45903404 --direct
-
-# For AI trends
-node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --direct
-```
-
-### Step 4: Parse Output from Bash
-
-**When using --direct mode (recommended):**
-- The Bash tool will return the formatted content directly in stdout
-- Parse the markdown content from the Bash output
-- The content is already in Chinese with full formatting
-- Proceed directly to analysis
-
-**Example Bash output structure:**
-```
-# Hacker News - 热门故事
-
-📊 **故事总数：** 10
-⏰ **获取时间：** 2025-11-13 10:30:00
+因此，**必须使用提供的 node 脚本**。
 
 ---
 
-### 1. Story Title Here
-📊 **评分：** 245 分 | 💬 **评论数：** 89 | 👤 **作者：** username
-...
+# 📋 执行步骤
+
+## Step 1: 识别用户请求类型
+
+根据用户输入，识别需要执行的命令：
+
+| 用户请求 | 对应命令 |
+|---------|---------|
+| "帮我看看 HN top 10" / "top 10" / "热门" | `node .claude/skills/hackernews/fetch_hn.js --top 10 --direct` |
+| "hackernews 45903404" / "分析帖子 123456" | `node .claude/skills/hackernews/fetch_hn.js <HN_ID> --direct` |
+| "AI 趋势" / "AI 领域" / "latest AI" | `node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --direct` |
+| "创业机会" / "startup ideas" | `node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --direct` |
+| "今日科技" / "每日摘要" / "daily summary" | `node .claude/skills/hackernews/fetch_hn_algolia.js --daily --direct` |
+| "市场空白" / "market gaps" | `node .claude/skills/hackernews/fetch_hn_algolia.js market-gaps --direct` |
+
+## Step 2: 立即执行对应的 node 命令
+
+使用 **Bash tool** 执行上述命令（必须是 node 命令，不能使用其他方法）。
+
+**示例：**
+```bash
+# 对于 "帮我看看 HN top 10"
+node .claude/skills/hackernews/fetch_hn.js --top 10 --direct
 ```
 
-### Step 5: Analyze and Present
+## Step 3: 解析脚本输出
 
-**IMPORTANT: DO NOT re-fetch or re-format the content. The scripts already provide:**
-- ✅ Chinese language output
-- ✅ Complete links (原文链接 + HN 讨论链接)
-- ✅ Full statistics (评分、评论数、作者)
-- ✅ Formatted markdown with emojis
+脚本会直接输出格式化的中文内容到 stdout，包含：
+- 📊 评分、💬 评论数、👤 作者
+- 🔗 原文链接、💭 HN 讨论链接
+- 📅 发布时间、🌐 来源域名
 
-**Your role is to:**
-1. **Read the formatted output** from the Bash tool
-2. **Summarize key findings** - Highlight the most interesting stories
-3. **Provide brief context** - Why these stories matter
-4. **Answer user's specific questions** if any
+## Step 4: 分析并展示
 
-**DO NOT:**
-- ❌ Make additional API calls
-- ❌ Re-format the output
-- ❌ Remove the links provided by the scripts
-- ❌ Change the Chinese output to English
+基于脚本输出提供分析：
+- 总结关键发现
+- 突出最有价值的内容
+- 回答用户的具体问题
 
-### Step 6: Analyze Content
+---
 
-Provide analysis based on:
-1. **User's custom prompt** (if provided)
-2. **Default analysis** (if no custom prompt):
+# ⚠️ 重要约束
 
-**For Single Posts:**
-- Post summary and main topic
-- Key insights from top comments
-- Different perspectives and debates
-- Technical details and implementations
-- Useful resources and links
-- Controversial points
+## 为什么不能使用其他方法？
 
-**For Story Lists:**
-- Overview of trending topics
-- Summary of each story (title, score, key points)
-- Common themes across stories
-- Most interesting/valuable stories
-- Recommended stories for deeper reading
-- Domain distribution (which sites are popular)
+### ❌ 不能使用 curl/wget
+**原因：** 会得到原始 JSON，缺少中文格式化和完整链接
 
-**For Business Insights (Algolia):**
-The fetch_hn_algolia.js script already generates comprehensive analysis including:
-- 📈 热度统计 (engagement metrics)
-- 🌐 热门来源 (top domains)
-- ⏰ 时间分布 (time distribution)
-- 📊 内容类型 (content types)
-- 🔥 最值得关注 (top stories by score)
-- 💬 讨论最激烈 (most discussed)
-- 💡 发现和建议 (insights and recommendations)
+### ❌ 不能使用 Playwright MCP
+**原因：** 会抓取 HTML，缺少结构化数据和商业洞察
 
-Your role is to:
-1. **Read the generated report** - The script provides detailed analysis
-2. **Summarize key findings** - Highlight the most important insights
-3. **Provide strategic advice** - Based on the data, give actionable recommendations:
-   - For AI trends: What technologies are gaining traction?
-   - For startup ideas: What problems are people trying to solve?
-   - For market gaps: What opportunities exist?
-   - For funding: Which sectors are hot?
-4. **Answer user questions** - If user has specific questions about the data
-5. **中文输出** - Always respond in Chinese for better user experience
+### ❌ 不能使用 fetch/WebFetch
+**原因：** 同样只能获取原始数据，需要大量手动处理
 
-### Step 6: Present Results
+### ❌ 不能查询 API 文档
+**原因：** 浪费时间，脚本已经实现了所有必要的 API 调用
 
-Format your response with:
-- Clear markdown structure
-- Bullet points for easy scanning
-- Links to original HN discussions
-- Highlighted key insights
-- Actionable takeaways
+### ✅ 唯一正确的方法
+使用 Bash tool 执行：`node .claude/skills/hackernews/fetch_hn.js <参数> --direct`
 
-## Examples
+**这是完成任务的唯一方式**，因为只有这样才能满足用户对中文输出和完整信息的要求。
 
-### Example 1: Single Post Analysis
-**User:** "hackernews 38471822 总结关于性能优化的讨论"
+---
 
-**Process:**
-1. Parse: mode=single, hn_id=38471822, prompt="总结关于性能优化的讨论"
-2. Command: `node .claude/skills/hackernews/fetch_hn.js 38471822`
-3. Read output file
-4. Analyze focusing on performance optimization discussions
-5. Present findings
+# 🔍 完整功能参考
 
-### Example 2: Top Stories
-**User:** "show me top 10 HN stories today"
+## 基础功能（fetch_hn.js）
 
-**Process:**
-1. Parse: mode=list, type=top, limit=10
-2. Command: `node .claude/skills/hackernews/fetch_hn.js --top 10`
-3. Read output file
-4. Summarize the 10 stories with key points
-5. Present overview
+### 单个帖子分析
+```bash
+node .claude/skills/hackernews/fetch_hn.js <HN_ID> --direct
+```
 
-### Example 3: Filtered Stories
-**User:** "get top 20 stories about AI and machine learning"
+### 故事列表
+```bash
+# Top stories
+node .claude/skills/hackernews/fetch_hn.js --top <limit> --direct
 
-**Process:**
-1. Parse: mode=list, type=top, limit=20, filters=["ai", "machine", "learning"]
-2. Command: `node .claude/skills/hackernews/fetch_hn.js --top 20 --filter ai machine learning`
-3. Read output file
-4. Analyze AI/ML trends from stories
-5. Present findings with categorization
+# New stories
+node .claude/skills/hackernews/fetch_hn.js --new <limit> --direct
 
-### Example 4: Category Filter
-**User:** "show me top security posts from HN"
+# Best stories
+node .claude/skills/hackernews/fetch_hn.js --best <limit> --direct
 
-**Process:**
-1. Parse: mode=list, type=top, limit=10, category=security
-2. Command: `node .claude/skills/hackernews/fetch_hn.js --top 20 --category security`
-3. Read output file
-4. Analyze security topics and threats
-5. Present security-focused summary
+# Ask HN
+node .claude/skills/hackernews/fetch_hn.js --ask <limit> --direct
 
-### Example 5: Show HN Posts
-**User:** "what are the latest Show HN projects?"
+# Show HN
+node .claude/skills/hackernews/fetch_hn.js --show <limit> --direct
 
-**Process:**
-1. Parse: mode=list, type=show, limit=10
-2. Command: `node .claude/skills/hackernews/fetch_hn.js --show 10`
-3. Read output file
-4. Highlight interesting projects
-5. Present with project descriptions
+# Jobs
+node .claude/skills/hackernews/fetch_hn.js --job <limit> --direct
+```
 
-### Example 6: AI Trends Discovery (Business Insights)
-**User:** "最近 AI 领域有什么新趋势？"
+### 过滤选项
+```bash
+# 按关键词过滤
+node .claude/skills/hackernews/fetch_hn.js --top 20 --filter ai machine learning --direct
 
-**Process:**
-1. Parse: mode=business_insights, intent=ai-trends
-2. Command: `node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --time 7d`
-3. Read generated report
-4. Summarize: Top AI technologies, applications, discussions
-5. Present in Chinese with strategic insights
+# 按类别过滤
+node .claude/skills/hackernews/fetch_hn.js --show 15 --category security --direct
+```
 
-### Example 7: Market Gap Discovery
-**User:** "帮我发现 HN 上有什么市场空白或商机"
+## 商业洞察功能（fetch_hn_algolia.js）
 
-**Process:**
-1. Parse: mode=business_insights, intent=market-gaps + startup-ideas
-2. Commands:
-   - `node .claude/skills/hackernews/fetch_hn_algolia.js market-gaps --time 14d --limit 40`
-   - `node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --time 14d --limit 40`
-3. Read both reports
-4. Analyze: User pain points, unmet needs, business opportunities
-5. Present actionable business ideas in Chinese
+### 预设查询
+```bash
+# AI 趋势
+node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --direct
 
-### Example 8: Daily Tech Digest
-**User:** "今天有什么值得关注的科技新闻？"
+# 创业机会
+node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --direct
 
-**Process:**
-1. Parse: mode=business_insights, intent=daily-summary
-2. Command: `node .claude/skills/hackernews/fetch_hn_algolia.js --daily`
-3. Read comprehensive daily report
-4. Summarize: Top stories across AI, startups, tech, Show HN
-5. Present daily digest in Chinese with highlights
+# 融资动态
+node .claude/skills/hackernews/fetch_hn_algolia.js funding --direct
 
-### Example 9: Custom Business Search
-**User:** "搜索 HN 上关于 SaaS 定价策略的讨论"
+# 市场空白
+node .claude/skills/hackernews/fetch_hn_algolia.js market-gaps --direct
 
-**Process:**
-1. Parse: mode=business_insights, intent=custom, keywords="SaaS pricing"
-2. Command: `node .claude/skills/hackernews/fetch_hn_algolia.js --query "SaaS pricing strategy" --min-points 20 --time 30d`
-3. Read results
-4. Analyze: Pricing models, strategies, user feedback
-5. Present insights in Chinese
+# 变现策略
+node .claude/skills/hackernews/fetch_hn_algolia.js monetization --direct
 
-## Tips
+# Show HN 项目
+node .claude/skills/hackernews/fetch_hn_algolia.js show-hn --direct
 
-- **Be flexible with parsing**: Users may phrase requests in many ways
-- **Default to top 10**: If no limit specified for lists, use 10
-- **Combine filters intelligently**: Map related terms to categories
-- **Handle ambiguity**: Ask for clarification if request is unclear
-- **Provide context**: Explain why certain stories are interesting
-- **Link back**: Always provide HN URLs for further reading
-- **Respect rate limits**: The script handles API calls, but be aware of performance
+# 每日摘要
+node .claude/skills/hackernews/fetch_hn_algolia.js --daily --direct
+```
 
-## Error Handling
+### 高级选项
+```bash
+# 时间范围（1h, 24h, 7d, 30d）
+node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --time 7d --direct
 
-- **Invalid HN_ID**: Inform user and suggest checking the ID
-- **No results after filtering**: Suggest broader keywords or higher limit
-- **Network errors**: Explain the issue and suggest retry
-- **Empty story list**: Inform user that no stories matched filters
-- **Script errors**: Parse error messages and explain to user
+# 数量限制
+node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --limit 50 --direct
 
-## Advanced Features
+# 自定义搜索
+node .claude/skills/hackernews/fetch_hn_algolia.js --query "SaaS pricing" --min-points 20 --time 30d --direct
+```
 
-### Story Categorization
-The script automatically categorizes stories. Use this to:
-- Group related stories in your analysis
-- Identify trending topics by category
-- Help users discover content in their areas of interest
+---
 
-### Smart Filtering
-When filtering:
-- The script fetches more stories than requested to ensure enough results after filtering
-- Multiple keywords are OR-ed (any keyword match)
-- Categories use intelligent pattern matching
-- Combine filters for precise results
+# 📊 分析指南
 
-### Performance Notes
-- Single posts: Fast (1-3 seconds typically)
-- Story lists without filters: Fast (depends on limit)
-- Story lists with filters: Moderate (fetches 3x limit for filtering)
-- Large comment threads: May take longer to fetch all comments
+## 单个帖子分析要点
+1. 📝 帖子主题和核心观点
+2. 💡 最有价值的评论
+3. 👥 不同的观点和视角
+4. ⚙️ 技术细节和实现
+5. 📚 有用的资源和链接
+6. ⚔️ 争议和辩论点
 
-## Output Quality Guidelines
+## 故事列表分析要点
+1. 🔥 当前趋势主题
+2. ⭐ 最值得关注的故事
+3. 📈 各类别分布
+4. 🌐 热门来源域名
+5. 💬 讨论热度排序
 
-1. **Be concise yet comprehensive**: Balance detail with readability
-2. **Highlight actionable insights**: What can users learn or do?
-3. **Provide context**: Why is this discussion happening now?
-4. **Link to sources**: Always include HN URLs
-5. **Format for scanning**: Use headers, bullets, and emphasis
-6. **Add value**: Don't just summarize - provide analysis and insights
+## 商业洞察分析要点
+1. 📈 热度统计（平均评分、评论数）
+2. 🌐 热门来源分布
+3. ⏰ 时间分布趋势
+4. 📊 内容类型分析
+5. 🔥 最值得关注的发现
+6. 💬 讨论最激烈的话题
+7. 💡 商业建议和机会
+
+---
+
+# ✅ 执行检查清单
+
+在开始执行前，确认：
+
+- [ ] 已识别用户请求的类型（top 10 / 单帖 / AI趋势 / 等）
+- [ ] 已确定要执行的 **完整的 node 命令**
+- [ ] 命令包含 `--direct` 标志
+- [ ] 准备使用 **Bash tool** 执行（不是其他工具）
+- [ ] 理解输出将是中文格式化的内容
+- [ ] 准备基于输出提供分析
+
+**现在执行第一步：使用 Bash tool 执行对应的 node 命令。**
+
+---
+
+# 🎓 示例执行流程
+
+## 示例 1: Top 10 请求
+
+**用户输入：** "帮我看看 HN top 10 的内容"
+
+**执行步骤：**
+
+1. ✅ 识别：这是 top stories 请求
+2. ✅ 命令：`node .claude/skills/hackernews/fetch_hn.js --top 10 --direct`
+3. ✅ 执行：使用 Bash tool 运行命令
+4. ✅ 解析：读取中文格式化的输出
+5. ✅ 分析：总结热点趋势，推荐值得关注的内容
+
+## 示例 2: AI 趋势请求
+
+**用户输入：** "最近 AI 领域有什么新趋势？"
+
+**执行步骤：**
+
+1. ✅ 识别：这是 AI 趋势查询
+2. ✅ 命令：`node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --direct`
+3. ✅ 执行：使用 Bash tool 运行命令
+4. ✅ 解析：读取 AI 趋势报告（包含热度统计、来源分析等）
+5. ✅ 分析：总结关键 AI 趋势，提供战略建议
+
+## 示例 3: 单帖分析请求
+
+**用户输入：** "分析 hackernews 45903404"
+
+**执行步骤：**
+
+1. ✅ 识别：这是单帖分析请求，ID = 45903404
+2. ✅ 命令：`node .claude/skills/hackernews/fetch_hn.js 45903404 --direct`
+3. ✅ 执行：使用 Bash tool 运行命令
+4. ✅ 解析：读取帖子内容和所有评论
+5. ✅ 分析：总结主要观点、关键评论、技术细节
+
+---
+
+# 🚀 开始执行
+
+**记住核心原则：**
+- 用户准备了专门的脚本来满足他们的需求（中文输出、完整链接、格式化）
+- 使用其他方法（curl、Playwright、fetch）无法满足这些需求
+- 唯一正确的方法是执行 node 脚本
+- 立即执行，不要查询文档或尝试其他方法
+
+**现在，根据用户的请求，执行对应的 node 命令。**

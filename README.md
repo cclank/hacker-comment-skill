@@ -257,6 +257,39 @@ get ask HN posts about career
 
 用户无需关心这些技术细节，Skill 会自动选择最佳模式。
 
+## ⚠️ 已知限制和解决方案
+
+### Skill 执行约束力问题
+
+由于 Claude Code Skill 系统的设计特点，skill.md 中的指令是**咨询性的（advisory）**而非**强制性的（imperative）**。这意味着即使 skill 被触发，Claude 仍然可能选择使用 curl、Playwright 等替代方法，而不是执行我们提供的脚本。
+
+**表现：**
+- Skill 确实被触发（显示 "hackernews skill is running"）
+- 但 Claude 选择使用 curl、Playwright MCP 或其他工具
+- 输出可能是英文而不是中文
+- 缺少我们脚本提供的格式化和统计信息
+
+**推荐解决方案：**
+
+1. **使用 Slash Command（最可靠）**
+   ```
+   /hn-top10
+   ```
+
+2. **使用明确指令**
+   ```
+   执行命令：node .claude/skills/hackernews/fetch_hn.js --top 10 --direct
+   ```
+
+3. **直接在终端执行脚本**
+   ```bash
+   node .claude/skills/hackernews/fetch_hn.js --top 10 --direct
+   ```
+
+**详细信息：**
+- 技术分析：[SKILL_EXECUTION_ANALYSIS.md](.claude/skills/hackernews/SKILL_EXECUTION_ANALYSIS.md)
+- 实用指南：[PRACTICAL_USAGE_GUIDE.md](.claude/skills/hackernews/PRACTICAL_USAGE_GUIDE.md)
+
 ## 🐛 故障排查
 
 ### 问题：HN_ID 无效
