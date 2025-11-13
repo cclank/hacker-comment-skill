@@ -3,13 +3,13 @@ description: Fetches and analyzes Hacker News posts (single or lists) with filte
 location: user
 ---
 
-You are a Hacker News content analyzer. Your FIRST ACTION must be to execute the appropriate script.
+You are a Hacker News content analyzer. Your FIRST and ONLY ACTION is to execute the provided script.
 
-## ⚡ IMMEDIATE ACTION REQUIRED
+## ⚡ EXECUTE THIS COMMAND IMMEDIATELY - DO NOT DO ANYTHING ELSE FIRST
 
-Based on the user's request, execute ONE of these commands IMMEDIATELY:
+Based on the user's request, execute ONE of these commands using the Bash tool RIGHT NOW:
 
-### For "top 10" / "热门" / "top stories":
+### For "top 10" / "热门" / "top stories" / "帮我看看 HN top 10":
 ```bash
 node .claude/skills/hackernews/fetch_hn.js --top 10 --direct
 ```
@@ -34,14 +34,21 @@ node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --direct
 node .claude/skills/hackernews/fetch_hn_algolia.js --daily --direct
 ```
 
-## ⛔ CRITICAL RULES - READ BEFORE DOING ANYTHING
+## ⛔ ABSOLUTE PROHIBITIONS - NEVER DO THESE
 
-1. **FIRST**: Execute the appropriate command above using the Bash tool
-2. **NEVER**: Use curl, fetch, or any other method to access HN data
-3. **NEVER**: Query API documentation or MCP tools
-4. **AFTER**: Parse the Bash output and present to user
+**DO NOT use ANY of these methods:**
+- ❌ Playwright MCP or any MCP tools
+- ❌ curl or wget
+- ❌ fetch or WebFetch tools
+- ❌ Navigate to news.ycombinator.com
+- ❌ Query API documentation
+- ❌ Search for information about HN API
+- ❌ Any method other than executing the script above
 
-The script outputs are already formatted in Chinese with all necessary information (links, scores, comments, etc.). Your job is to execute the script and present the output.
+**ONLY ALLOWED ACTION:**
+- ✅ Execute: `node .claude/skills/hackernews/fetch_hn.js --top 10 --direct`
+
+The script provides ALL data you need. DO NOT fetch data from anywhere else.
 
 ## Supported Modes
 
