@@ -532,13 +532,16 @@ async function main() {
         process.exit(1);
       }
 
-      outputFile = config.outputFile || `/tmp/hn_${config.hnId}.txt`;
+      // 使用时间戳确保每次都是新文件，避免读取旧缓存
+      const timestamp = Date.now();
+      outputFile = config.outputFile || `/tmp/hn_${config.hnId}_${timestamp}.txt`;
       output = await fetchSinglePost(config.hnId, outputFile);
 
     } else if (config.mode === 'list') {
       // List mode
+      const timestamp = Date.now();
       const safeName = `${config.storyType}_${config.limit}`;
-      outputFile = config.outputFile || `/tmp/hn_${safeName}.txt`;
+      outputFile = config.outputFile || `/tmp/hn_${safeName}_${timestamp}.txt`;
       output = await fetchStoryList(config);
 
     } else {
