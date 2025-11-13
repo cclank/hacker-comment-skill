@@ -103,22 +103,34 @@ Based on parsed parameters, construct the appropriate command:
 
 **For Single Post:**
 ```bash
+# 推荐：使用直接输出模式（无文件，实时）
+node .claude/skills/hackernews/fetch_hn.js <HN_ID> --direct
+
+# 或使用文件模式（兼容性好，适合超长内容）
 node .claude/skills/hackernews/fetch_hn.js <HN_ID>
 ```
 
 **For Story Lists:**
 ```bash
-node .claude/skills/hackernews/fetch_hn.js --<type> <limit> [--filter keyword1 keyword2 ...] [--category cat1 cat2 ...]
+# 推荐：直接输出模式
+node .claude/skills/hackernews/fetch_hn.js --<type> <limit> --direct [--filter keywords...]
+
+# 传统文件模式
+node .claude/skills/hackernews/fetch_hn.js --<type> <limit> [--filter keywords...]
 ```
 
 Examples:
-- `node .claude/skills/hackernews/fetch_hn.js --top 10`
-- `node .claude/skills/hackernews/fetch_hn.js --top 20 --filter ai gpt machine learning`
-- `node .claude/skills/hackernews/fetch_hn.js --show 15 --filter rust`
-- `node .claude/skills/hackernews/fetch_hn.js --new 30 --category security`
+- `node .claude/skills/hackernews/fetch_hn.js --top 10 --direct`
+- `node .claude/skills/hackernews/fetch_hn.js --top 20 --filter ai gpt --direct`
+- `node .claude/skills/hackernews/fetch_hn.js --show 15 --filter rust --direct`
+- `node .claude/skills/hackernews/fetch_hn.js --new 30 --category security --direct`
 
 **For Business Insights (Algolia API):**
 ```bash
+# 推荐：直接输出模式（无文件，实时）
+node .claude/skills/hackernews/fetch_hn_algolia.js <preset> --direct [options]
+
+# 或使用文件模式
 node .claude/skills/hackernews/fetch_hn_algolia.js <preset> [options]
 ```
 
@@ -141,27 +153,40 @@ Options:
 - `--min-points <n>` - 最小评分
 - `--min-comments <n>` - 最小评论数
 - `--limit <n>` - 结果数量
+- `--direct` - 直接输出（推荐，无文件，实时）
 
-Examples:
-- `node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends`
-- `node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --time 7d`
-- `node .claude/skills/hackernews/fetch_hn_algolia.js market-gaps --min-points 30 --limit 50`
-- `node .claude/skills/hackernews/fetch_hn_algolia.js --daily` (每日摘要)
-- `node .claude/skills/hackernews/fetch_hn_algolia.js --query "SaaS" --min-points 20` (自定义搜索)
+Examples (推荐使用 --direct):
+- `node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --direct`
+- `node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --time 7d --direct`
+- `node .claude/skills/hackernews/fetch_hn_algolia.js market-gaps --min-points 30 --limit 50 --direct`
+- `node .claude/skills/hackernews/fetch_hn_algolia.js --daily --direct` (每日摘要)
+- `node .claude/skills/hackernews/fetch_hn_algolia.js --query "SaaS" --min-points 20 --direct` (自定义搜索)
 
 ### Step 3: Execute Command
 
-Run the constructed command using the Bash tool. The script will:
+Run the constructed command using the Bash tool. **Recommended: use `--direct` flag for real-time output.**
+
+**With --direct flag (推荐):**
 1. Fetch content from HN API
 2. Apply filters if specified
-3. Save formatted content to a file
-4. Output the file path to stdout
+3. **Directly output formatted content to stdout**
+4. No file needed - capture output directly from stdout
 
-Capture the output file path from stdout.
+**Without --direct flag (传统模式):**
+1. Fetch content from HN API
+2. Apply filters if specified
+3. Save formatted content to a file with timestamp
+4. Output the file path to stdout
+5. Capture the output file path from stdout
 
 ### Step 4: Read Content
 
-Use the Read tool to read the file returned by the script.
+**If using --direct mode:**
+- Content is already in the Bash output, parse it directly
+- No need to read files
+
+**If using traditional file mode:**
+- Use the Read tool to read the file returned by the script
 
 ### Step 5: Analyze Content
 

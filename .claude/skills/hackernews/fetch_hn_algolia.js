@@ -445,7 +445,8 @@ function parseArgs(args) {
     numericFilters: [],
     hitsPerPage: 30,
     timeRange: null,
-    searchByDate: false
+    searchByDate: false,
+    directOutput: false  // 直接输出到 stdout
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -504,6 +505,10 @@ function parseArgs(args) {
     else if (arg === '--output' || arg === '-o') {
       config.outputFile = args[++i];
     }
+    // 直接输出
+    else if (arg === '--direct' || arg === '--stdout') {
+      config.directOutput = true;
+    }
   }
 
   return config;
@@ -549,6 +554,7 @@ function printUsage() {
   --tags, -t <tags>        标签过滤 (story, show_hn, ask_hn 等)
   --by-date                按日期排序（而非相关性）
   --output, -o <file>      输出文件路径
+  --direct, --stdout       直接输出到 stdout（无文件，实时性更好）
 
 示例：
 
@@ -658,13 +664,18 @@ async function main() {
     // 格式化报告
     const report = formatReport(result, queryType, config);
 
-    // 保存到文件
-    const outputFile = config.outputFile || `/tmp/hn_insight_${queryType || 'custom'}_${Date.now()}.txt`;
-    fs.writeFileSync(outputFile, report, 'utf-8');
-    console.error(`\n✅ 报告已保存到: ${outputFile}\n`);
-
-    // 输出文件路径供 skill 使用
-    console.log(outputFile);
+    // 如果启用了直接输出模式，直接打印到 stdout
+    if (config.directOutput) {
+      console.error('✅ Using direct output mode (no file)\n');
+      console.log(report);
+    } else {
+      // 否则保存到文件
+      const outputFile = config.outputFile || `/tmp/hn_insight_${queryType || 'custom'}_${Date.now()}.txt`;
+      fs.writeFileSync(outputFile, report, 'utf-8');
+      console.error(`\n✅ 报告已保存到: ${outputFile}\n`);
+      // 输出文件路径供 skill 使用
+      console.log(outputFile);
+    }
 
   } catch (error) {
     console.error('\n❌ 错误:', error.message);

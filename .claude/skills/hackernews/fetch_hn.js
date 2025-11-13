@@ -329,7 +329,8 @@ function parseArgs(args) {
     limit: 10,
     filters: [],
     categories: [],
-    outputFile: null
+    outputFile: null,
+    directOutput: false  // 直接输出到 stdout，不使用文件
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -364,6 +365,8 @@ function parseArgs(args) {
     } else if (arg === '--output' || arg === '-o') {
       config.outputFile = args[i + 1];
       i++;
+    } else if (arg === '--direct' || arg === '--stdout') {
+      config.directOutput = true;
     } else if (!arg.startsWith('--') && !config.hnId) {
       // First non-flag argument is the HN ID
       config.hnId = arg;
@@ -400,6 +403,7 @@ Options:
   --category, -c       Filter by categories: ai/ml, programming, web, database,
                        security, startup, devops, general
   --output, -o         Output file path
+  --direct, --stdout   Direct output to stdout (no file, for better real-time performance)
 
 Examples:
   # Get single post
@@ -550,12 +554,17 @@ async function main() {
       process.exit(1);
     }
 
-    // Write to file
-    fs.writeFileSync(outputFile, output, 'utf-8');
-    console.error(`Content saved to: ${outputFile}`);
-
-    // Output the file path to stdout for the skill to capture
-    console.log(outputFile);
+    // 如果启用了直接输出模式，直接打印到 stdout
+    if (config.directOutput) {
+      console.error('Using direct output mode (no file)');
+      console.log(output);
+    } else {
+      // 否则写入文件
+      fs.writeFileSync(outputFile, output, 'utf-8');
+      console.error(`Content saved to: ${outputFile}`);
+      // Output the file path to stdout for the skill to capture
+      console.log(outputFile);
+    }
 
   } catch (error) {
     console.error('Error:', error.message);
