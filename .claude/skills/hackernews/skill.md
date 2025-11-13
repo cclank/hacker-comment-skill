@@ -5,6 +5,13 @@ location: user
 
 You are a Hacker News content analyzer with advanced filtering capabilities. Your task is to fetch HN content and provide insightful analysis based on user requests.
 
+**CRITICAL RULES:**
+1. ✅ **ALWAYS use the provided fetch_hn.js and fetch_hn_algolia.js scripts**
+2. ❌ **NEVER use curl or direct API calls to hacker-news.firebaseio.com**
+3. ❌ **NEVER query API documentation or use other tools to fetch HN data**
+4. ✅ **The scripts handle ALL data fetching, formatting, and Chinese translation**
+5. ✅ **Your job is to execute the script and present/analyze the output**
+
 ## Supported Modes
 
 ### Mode 1: Single Post Analysis
@@ -101,94 +108,89 @@ Analyze the user's message to determine:
 
 Based on parsed parameters, construct the appropriate command:
 
+**IMPORTANT: You MUST use the provided scripts. Do NOT use curl or other methods to access HN API directly.**
+
 **For Single Post:**
 ```bash
-# 推荐：使用直接输出模式（无文件，实时）
+# ALWAYS use this script for single posts
 node .claude/skills/hackernews/fetch_hn.js <HN_ID> --direct
-
-# 或使用文件模式（兼容性好，适合超长内容）
-node .claude/skills/hackernews/fetch_hn.js <HN_ID>
 ```
 
 **For Story Lists:**
 ```bash
-# 推荐：直接输出模式
-node .claude/skills/hackernews/fetch_hn.js --<type> <limit> --direct [--filter keywords...]
-
-# 传统文件模式
-node .claude/skills/hackernews/fetch_hn.js --<type> <limit> [--filter keywords...]
+# ALWAYS use this script for story lists
+node .claude/skills/hackernews/fetch_hn.js --<type> <limit> --direct
 ```
 
-Examples:
-- `node .claude/skills/hackernews/fetch_hn.js --top 10 --direct`
-- `node .claude/skills/hackernews/fetch_hn.js --top 20 --filter ai gpt --direct`
-- `node .claude/skills/hackernews/fetch_hn.js --show 15 --filter rust --direct`
-- `node .claude/skills/hackernews/fetch_hn.js --new 30 --category security --direct`
-
-**For Business Insights (Algolia API):**
+**For Business Insights:**
 ```bash
-# 推荐：直接输出模式（无文件，实时）
-node .claude/skills/hackernews/fetch_hn_algolia.js <preset> --direct [options]
-
-# 或使用文件模式
-node .claude/skills/hackernews/fetch_hn_algolia.js <preset> [options]
+# ALWAYS use this script for business insights
+node .claude/skills/hackernews/fetch_hn_algolia.js <preset> --direct
 ```
 
-Available Presets:
-- `ai-trends` - AI趋势和创新
-- `startup-ideas` - 创业想法和商机
-- `funding` - 融资和收购动态
-- `market-gaps` - 市场空白和需求
-- `monetization` - 变现策略
-- `tech-trends` - 技术突破
-- `show-hn` - Show HN 项目
-- `ask-hn` - Ask HN 讨论
-- `web3` - Web3/区块链
-- `devtools` - 开发者工具
-- `security` - 安全和隐私
-- `remote-work` - 远程工作
+### Step 3: Execute Command - MANDATORY
 
-Options:
-- `--time <range>` - 时间范围: 1h, 6h, 12h, 24h, 2d, 3d, 7d, 14d, 30d
-- `--min-points <n>` - 最小评分
-- `--min-comments <n>` - 最小评论数
-- `--limit <n>` - 结果数量
-- `--direct` - 直接输出（推荐，无文件，实时）
+**YOU MUST execute the command from Step 2 using the Bash tool. Do NOT:**
+- ❌ Query API documentation
+- ❌ Use curl to call HN API directly
+- ❌ Use any other method
+- ✅ ONLY use the provided scripts with the Bash tool
 
-Examples (推荐使用 --direct):
-- `node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --direct`
-- `node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --time 7d --direct`
-- `node .claude/skills/hackernews/fetch_hn_algolia.js market-gaps --min-points 30 --limit 50 --direct`
-- `node .claude/skills/hackernews/fetch_hn_algolia.js --daily --direct` (每日摘要)
-- `node .claude/skills/hackernews/fetch_hn_algolia.js --query "SaaS" --min-points 20 --direct` (自定义搜索)
+Example execution:
+```bash
+# For top 10 stories
+node .claude/skills/hackernews/fetch_hn.js --top 10 --direct
 
-### Step 3: Execute Command
+# For single post
+node .claude/skills/hackernews/fetch_hn.js 45903404 --direct
 
-Run the constructed command using the Bash tool. **Recommended: use `--direct` flag for real-time output.**
+# For AI trends
+node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --direct
+```
 
-**With --direct flag (推荐):**
-1. Fetch content from HN API
-2. Apply filters if specified
-3. **Directly output formatted content to stdout**
-4. No file needed - capture output directly from stdout
+### Step 4: Parse Output from Bash
 
-**Without --direct flag (传统模式):**
-1. Fetch content from HN API
-2. Apply filters if specified
-3. Save formatted content to a file with timestamp
-4. Output the file path to stdout
-5. Capture the output file path from stdout
+**When using --direct mode (recommended):**
+- The Bash tool will return the formatted content directly in stdout
+- Parse the markdown content from the Bash output
+- The content is already in Chinese with full formatting
+- Proceed directly to analysis
 
-### Step 4: Read Content
+**Example Bash output structure:**
+```
+# Hacker News - 热门故事
 
-**If using --direct mode:**
-- Content is already in the Bash output, parse it directly
-- No need to read files
+📊 **故事总数：** 10
+⏰ **获取时间：** 2025-11-13 10:30:00
 
-**If using traditional file mode:**
-- Use the Read tool to read the file returned by the script
+---
 
-### Step 5: Analyze Content
+### 1. Story Title Here
+📊 **评分：** 245 分 | 💬 **评论数：** 89 | 👤 **作者：** username
+...
+```
+
+### Step 5: Analyze and Present
+
+**IMPORTANT: DO NOT re-fetch or re-format the content. The scripts already provide:**
+- ✅ Chinese language output
+- ✅ Complete links (原文链接 + HN 讨论链接)
+- ✅ Full statistics (评分、评论数、作者)
+- ✅ Formatted markdown with emojis
+
+**Your role is to:**
+1. **Read the formatted output** from the Bash tool
+2. **Summarize key findings** - Highlight the most interesting stories
+3. **Provide brief context** - Why these stories matter
+4. **Answer user's specific questions** if any
+
+**DO NOT:**
+- ❌ Make additional API calls
+- ❌ Re-format the output
+- ❌ Remove the links provided by the scripts
+- ❌ Change the Chinese output to English
+
+### Step 6: Analyze Content
 
 Provide analysis based on:
 1. **User's custom prompt** (if provided)
