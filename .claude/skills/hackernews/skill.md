@@ -1,5 +1,5 @@
 ---
-description: Fetches and analyzes Hacker News posts (single or lists) with filtering by keywords/categories and custom prompts
+description: Fetches and analyzes Hacker News posts (single or lists) with filtering by keywords/categories and custom prompts. Supports trending posts discovery with time-based filtering.
 location: user
 ---
 
@@ -15,6 +15,14 @@ Fetch and analyze multiple stories with optional filtering by:
 - **Keywords**: Filter stories containing specific terms
 - **Categories**: AI/ML, Programming, Web Dev, Database, Security, Startup, DevOps/Cloud
 - **Limit**: Number of stories to fetch (default: 10)
+
+### Mode 3: Trending Posts Discovery (NEW!)
+Find the most valuable and trending posts using Algolia API with:
+- **Time Ranges**: Today (24h), Last 3 Days, Last Week, Last Month
+- **Topic Filtering**: AI, Programming, Web, Database, Security, Startup, DevOps, Blockchain, Hardware, Science, Career, Design
+- **Smart Scoring**: Calculates value score based on points, comments, engagement ratio, and recency
+- **Minimum Thresholds**: Filter by minimum points or comments
+- **Sorting**: By value score, date, or relevance
 
 ## User Input Patterns
 
@@ -43,27 +51,56 @@ Detect and parse these patterns from user messages:
 - Categories: "top 20 stories in security category"
 - Combined: "show HN posts about rust, limit 15"
 
+### Pattern 5: Trending Posts (NEW!)
+- `trending today` or `trending posts today`
+- `trending this week about AI`
+- `最近一周最热门的帖子`
+- `当天最有价值的AI相关帖子`
+- `show me trending security posts from last 3 days`
+- `find valuable startup posts this month`
+- Examples:
+  - "帮我找到今天最热门的帖子"
+  - "show me this week's most valuable AI posts"
+  - "trending posts about rust from last week"
+  - "最近3天关于安全的热门讨论"
+
 ## Instructions
 
 ### Step 1: Parse User Request
 
 Analyze the user's message to determine:
-1. **Mode**: single post OR story list
+1. **Mode**: single post OR story list OR trending discovery
 2. **Story Type**: top/new/best/ask/show/job (if list mode)
 3. **HN_ID**: Post ID (if single mode)
-4. **Limit**: Number of stories (if list mode, default 10)
+4. **Limit**: Number of stories (default 10 for lists, 30 for trending)
 5. **Filters**: Keywords to filter by
-6. **Categories**: Categories to filter by
-7. **Custom Prompt**: Analysis instructions
+6. **Categories/Topics**: Categories to filter by
+7. **Time Range**: today/3days/week/month (if trending mode)
+8. **Minimum Points/Comments**: Quality thresholds
+9. **Custom Prompt**: Analysis instructions
 
-**Category Keywords Mapping:**
-- AI/ML: ai, artificial intelligence, machine learning, gpt, llm, neural, deep learning
-- Programming: python, javascript, rust, go, java, typescript, c++, ruby, programming
-- Web Dev: web, frontend, backend, api, react, vue, angular
-- Database: database, sql, postgres, mongodb, redis
-- Security: security, vulnerability, breach, exploit, crypto
-- Startup: startup, founder, vc, funding, acquisition
-- DevOps/Cloud: devops, docker, kubernetes, k8s, aws, cloud
+**Trending Mode Detection:**
+Look for keywords like: trending, 热门, 最热, valuable, 有价值, 当天, 最近, today, this week, last week, 本周, 上周
+
+**Time Range Keywords:**
+- Today/今天/当天 → --today
+- Last 3 days/最近3天 → --3days
+- This week/本周/最近一周 → --week
+- This month/本月/最近一个月 → --month
+
+**Topic Keywords Mapping (for Trending mode):**
+- AI: ai, artificial intelligence, machine learning, gpt, llm, neural, deep learning, chatgpt, claude
+- Programming: programming, code, developer, software, python, javascript, rust, go, java, typescript
+- Web: web, frontend, backend, fullstack, react, vue, angular, nodejs
+- Database: database, sql, postgres, mongodb, redis, mysql
+- Security: security, vulnerability, breach, exploit, cybersecurity, privacy
+- Startup: startup, founder, vc, funding, acquisition, entrepreneur
+- DevOps: devops, docker, kubernetes, k8s, aws, cloud, infrastructure
+- Blockchain: blockchain, crypto, bitcoin, ethereum, web3
+- Hardware: hardware, cpu, gpu, chip, semiconductor
+- Science: science, research, physics, biology, chemistry, math
+- Career: career, job, hiring, interview, resume, salary
+- Design: design, ui, ux, interface, figma
 
 ### Step 2: Construct Command
 
@@ -84,6 +121,27 @@ Examples:
 - `node .claude/skills/hackernews/fetch_hn.js --top 20 --filter ai gpt machine learning`
 - `node .claude/skills/hackernews/fetch_hn.js --show 15 --filter rust`
 - `node .claude/skills/hackernews/fetch_hn.js --new 30 --category security`
+
+**For Trending Posts (NEW!):**
+```bash
+node .claude/skills/hackernews/fetch_hn_trending.js [time_range] [options]
+```
+
+Options:
+- Time: `--today` (default), `--3days`, `--week`, `--month`
+- Topics: `--topic ai programming security ...`
+- Filters: `--min-points <n>`, `--min-comments <n>`
+- Limit: `--limit <n>` (default: 30)
+- Sort: `--sort value|date|relevance` (default: value)
+- Type: `--ask` or `--show` (optional)
+- Search: `--query "search terms"`
+
+Examples:
+- `node .claude/skills/hackernews/fetch_hn_trending.js --today --limit 20`
+- `node .claude/skills/hackernews/fetch_hn_trending.js --week --topic ai ml --min-points 50`
+- `node .claude/skills/hackernews/fetch_hn_trending.js --3days --show --topic rust`
+- `node .claude/skills/hackernews/fetch_hn_trending.js --week --topic security --min-comments 20 --limit 15`
+- `node .claude/skills/hackernews/fetch_hn_trending.js --today --query "rust programming" --limit 10`
 
 ### Step 3: Execute Command
 
@@ -181,6 +239,36 @@ Format your response with:
 3. Read output file
 4. Highlight interesting projects
 5. Present with project descriptions
+
+### Example 6: Trending Posts Today (NEW!)
+**User:** "帮我找到今天最热门的帖子"
+
+**Process:**
+1. Parse: mode=trending, time_range=today, limit=20
+2. Command: `node .claude/skills/hackernews/fetch_hn_trending.js --today --limit 20`
+3. Read output file
+4. Analyze trending topics and value scores
+5. Present top stories with insights
+
+### Example 7: Trending AI Posts This Week (NEW!)
+**User:** "show me this week's most valuable AI posts"
+
+**Process:**
+1. Parse: mode=trending, time_range=week, topics=["ai"], limit=30
+2. Command: `node .claude/skills/hackernews/fetch_hn_trending.js --week --topic ai ml --min-points 50`
+3. Read output file
+4. Analyze AI trends and discussions
+5. Present with categorization and highlights
+
+### Example 8: Trending Posts with Multiple Topics (NEW!)
+**User:** "最近3天关于安全和区块链的热门讨论"
+
+**Process:**
+1. Parse: mode=trending, time_range=3days, topics=["security", "blockchain"]
+2. Command: `node .claude/skills/hackernews/fetch_hn_trending.js --3days --topic security blockchain --min-points 30`
+3. Read output file
+4. Analyze security and blockchain trends
+5. Present cross-topic insights
 
 ## Tips
 
