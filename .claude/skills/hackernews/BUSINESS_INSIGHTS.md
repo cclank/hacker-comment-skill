@@ -157,7 +157,7 @@ hackernews insights ai-trends
 
 **Claude 执行**：
 ```bash
-node .claude/skills/hackernews/fetch_hn_algolia.js --daily
+node .claude/skills/hackernews/fetch_hn_algolia.js --daily --direct
 ```
 
 **你将获得**：
@@ -182,13 +182,13 @@ node .claude/skills/hackernews/fetch_hn_algolia.js --daily
 **Claude 执行**：
 ```bash
 # 市场空白
-node .claude/skills/hackernews/fetch_hn_algolia.js market-gaps --time 14d --limit 50
+node .claude/skills/hackernews/fetch_hn_algolia.js market-gaps --direct --time 14d --limit 50
 
 # 创业想法
-node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --time 14d --limit 50
+node .claude/skills/hackernews/fetch_hn_algolia.js startup-ideas --direct --time 14d --limit 50
 
 # Show HN 项目（看看别人在做什么）
-node .claude/skills/hackernews/fetch_hn_algolia.js show-hn --time 7d --limit 30
+node .claude/skills/hackernews/fetch_hn_algolia.js show-hn --direct --time 7d --limit 30
 ```
 
 **你将获得**：
@@ -217,10 +217,10 @@ node .claude/skills/hackernews/fetch_hn_algolia.js show-hn --time 7d --limit 30
 **Claude 执行**：
 ```bash
 # 过去7天的 AI 趋势
-node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --time 7d --min-points 30
+node .claude/skills/hackernews/fetch_hn_algolia.js ai-trends --direct --time 7d --min-points 30
 
 # 开发者工具（AI 工具）
-node .claude/skills/hackernews/fetch_hn_algolia.js devtools --time 7d --filter AI LLM GPT
+node .claude/skills/hackernews/fetch_hn_algolia.js devtools --direct --time 7d --filter AI LLM GPT
 ```
 
 **你将获得**：
@@ -251,6 +251,7 @@ node .claude/skills/hackernews/fetch_hn_algolia.js devtools --time 7d --filter A
 ```bash
 node .claude/skills/hackernews/fetch_hn_algolia.js \
   --query "SaaS pricing strategy" \
+  --direct \
   --min-points 20 \
   --time 30d \
   --limit 40
@@ -276,7 +277,7 @@ node .claude/skills/hackernews/fetch_hn_algolia.js \
 
 **Claude 执行**：
 ```bash
-node .claude/skills/hackernews/fetch_hn_algolia.js funding --time 30d --limit 50
+node .claude/skills/hackernews/fetch_hn_algolia.js funding --direct --time 30d --limit 50
 ```
 
 **你将获得**：
@@ -305,13 +306,13 @@ node .claude/skills/hackernews/fetch_hn_algolia.js funding --time 30d --limit 50
 **Claude 执行**：
 ```bash
 # Web3 相关内容
-node .claude/skills/hackernews/fetch_hn_algolia.js web3 --time 7d --limit 50
+node .claude/skills/hackernews/fetch_hn_algolia.js web3 --direct --time 7d --limit 50
 
 # 相关的 Show HN 项目
-node .claude/skills/hackernews/fetch_hn_algolia.js show-hn --time 7d --filter blockchain crypto web3
+node .claude/skills/hackernews/fetch_hn_algolia.js show-hn --direct --time 7d --filter blockchain crypto web3
 
 # Ask HN 讨论
-node .claude/skills/hackernews/fetch_hn_algolia.js ask-hn --time 7d --filter web3 blockchain
+node .claude/skills/hackernews/fetch_hn_algolia.js ask-hn --direct --time 7d --filter web3 blockchain
 ```
 
 **你将获得**：
